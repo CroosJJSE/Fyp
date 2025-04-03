@@ -1,5 +1,3 @@
-test2
-
 rm -rf /etc/netplan/50-cloud-init.yaml
 sudo nano /etc/netplan/50-cloud-init.yaml
 network:
@@ -397,4 +395,8 @@ github token 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
 
 
 git remote set-url origin https://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@github.com/CroosJJSE/git_board.git
-tested
+
+
+
+
+ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQCziMsK2FcDFcxo3kSPJkmseUxMFEEyV/DEr/FhwKq9WZOFe51DBpago9QBsxg/Y7C/MP1i/p2mWs45WugGgx8Hmx44hl6LTockZibudMNdoigUt8B9v/84ZgBpSWX6Yn0eHXFevR0dJ6WyfW6T53XTe6tUAHkmScBxaiQuRxxhsn2UywOJ/p73/oHd793UGVbxwnJOv/2r5EarsA33IHxgpRFqHHeBU2UgvlmqJEKAcwhsyi2BXevWnJ5HFKMquuJOtm/AB6CpN9eGpxv6+GI5+jEbrJEafdD4nerJ+2GNy+qeeqfAkaf5y0Pd3jFmGEn52J4XctJgc9wkPhPWMCsO4j8Zfcx25WHrFwb1apFCYzV+qI0GAt2LMh1oSjMZNi7xPWeG9FSu1DJVhSWE3xk5BqoQxi1dCpPYtV0fd9pLvuCJR0PHP7oTP9csd2SZKGpi0iQmM59mQFhD01rCUkjWS1Biu935VtVsE6QPu+HPYXQ/ZpktnN4cvv3pwhgZqxw211pHLC7cceg+vB1VPemZrEBnCw84KQ+PflkZ7m4sCluyjRjGvKQVnn7raGjEJU81D9L/5x/8VONSIH8GTiSR2rCnD+TKatV0BNPvAXqB2/iJ9AGGwsx0AFmauymKOO1rGqWS/aunvAbkEvXi9+5b4kZmx1Q9csNjmTZIm4/RGw== croosjjse.20@uom.lk
