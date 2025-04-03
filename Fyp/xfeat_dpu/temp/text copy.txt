@@ -1,0 +1,7 @@
+XFextractorDPU.h should be a child class of XfeatSLAMExtractor.h
+have to implement all virtual functions in the XfeatSLAMExtractor.h to the XFextractorDPU.h
+dont touch the public function becasue it is used in other parts of the XfeatSLAMExtractor
+we have to implement in OOPs (inheretance)
+for example as follow
+XFextractorBase *obj = new XFextractorDPU();
+obj->getInputWidth(); // there will be an error if it is not in parent class

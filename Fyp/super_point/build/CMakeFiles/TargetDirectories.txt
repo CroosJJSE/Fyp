@@ -1,0 +1,2 @@
+/root/jupyter_notebooks/Fyp/super_point/build/CMakeFiles/edit_cache.dir
+/root/jupyter_notebooks/Fyp/super_point/build/CMakeFiles/rebuild_cache.dir

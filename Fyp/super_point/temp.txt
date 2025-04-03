@@ -1,0 +1,25 @@
+
+Max values by quadrant - TL: 0.0824076, TR: 0.0612501, BL: 0.0244413, BR: 0.0506322
+Found 20416 keypoints before NMS
+Before NMS - TL: 11200, TR: 6144, BL: 768, BR: 2304
+After NMS - TL: 21, TR: 22, BL: 4, BR: 6
+Keypoint 0: (142, 66)
+Keypoint 1: (101, 70)
+Keypoint 2: (128, 66)
+Keypoint 3: (85, 71)
+Keypoint 4: (168, 63)
+Keypoint 5: (53, 74)
+Keypoint 6: (36, 76)
+Keypoint 7: (55, 91)
+Keypoint 8: (102, 86)
+Keypoint 9: (215, 120)
+After NMS: 53 keypoints remain
+ Found 106 keypoints in first image
+ Descriptor dimensions: 106 descriptors, each with 256 dimensions
+ Sample descriptor for first keypoint:
+ [-0.050202, -0.0873562, -0.0998023, -0.052968, -0.0597966, ...]
+ Keypoint distribution:
+ Top-left: 106 keypoints (100%)
+ Top-right: 0 keypoints (0%)
+ Bottom-left: 0 keypoints (0%)
+ Bottom-right: 0 keypoints (0%)

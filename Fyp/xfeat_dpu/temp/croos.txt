@@ -1,0 +1,3 @@
+XFextractorDPU.h should be a child class of xfextarctorBase.h as same as XfeatextractorGPU which was in the xfeatslam
+have to implement all virtual functions in the base.h to the DPU.h
+

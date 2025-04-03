@@ -1,0 +1,400 @@
+test2
+
+rm -rf /etc/netplan/50-cloud-init.yaml
+sudo nano /etc/netplan/50-cloud-init.yaml
+network:
+    version: 2
+    renderer: networkd
+    ethernets:
+        eth1:
+            dhcp4: no
+            addresses: [192.248.10.64/25]
+            gateway4: 192.248.10.126
+            nameservers:
+                addresses: [192.248.8.97] 
+                
+                
+systemctl is-enabled systemd-networkd
+sudo systemctl unmask systemd-networkd
+sudo systemctl restart systemd-networkd
+sudo netplan apply                
+                
+                
+#!/bin/bash
+
+# Copyright (C) 2023, Advanced Micro Devices, Inc. All rights reserved.
+# SPDX-License-Identifier: MIT
+
+# Author:     Sarunas Kalade, AMD
+# reviewed by Daniele Bagni, AMD
+# Date: 17 Nov 2023
+
+set -e # exit immediately if a command has a non-zero status
+
+# ***********************************************************************************************
+# STEP 1: download the archive vai3.5_kr260.zip from public URL:
+# ***********************************************************************************************
+
+cd /home/ubuntu
+wget -O vai3.5_kr260.zip https://www.xilinx.com/bin/public/openDownload?filename=vai3.5_kr260.zip
+
+# ***********************************************************************************************
+# STEP 2: launch the KRIA-PYNQ install on KR260
+# ***********************************************************************************************
+
+cd /home/ubuntu
+git clone https://github.com/Xilinx/Kria-PYNQ.git
+cd Kria-PYNQ/
+bash install.sh -b KV260
+
+# ***********************************************************************************************
+# STEP 3: add the patches where needed
+# ***********************************************************************************************
+
+cd /home/ubuntu
+unzip vai3.5_kr260.zip
+pushd vai3.5_kr260/target/runtime_deb/
+bash setup.sh
+cd ..
+tar -xzf lack_lib.tar.gz
+cp -r lack_lib/* /usr/lib
+popd
+cd vai3.5_kr260
+cp ./xbutil_tool/xbutil2 /usr/bin/unwrapped/
+
+# ***********************************************************************************************
+# STEP 4: Install DPU PYNQ for 3.5
+# ***********************************************************************************************
+
+cd /home/ubuntu
+git clone https://github.com/Xilinx/DPU-PYNQ -b design_contest_3.5
+cd DPU-PYNQ
+source /etc/profile.d/pynq_venv.sh
+python3 -m pip install . --no-build-isolation
+
+# ***********************************************************************************************
+# STEP 5: Jupiter Notebooks for 3.5
+# ***********************************************************************************************
+
+cd /root/jupyter_notebooks
+rm -rf pynq-dpu
+pynq get-notebooks pynq-dpu -p . --force
+
+# ***********************************************************************************************
+# STEP 6: Other patches
+# ***********************************************************************************************
+
+sed -i -e '$aexport LD_LIBRARY_PATH=/usr/lib' /etc/profile.d/pynq_venv.sh
+sed -i "s/\/usr\/bin\///g" /usr/bin/xdputil
+
+# ***********************************************************************************************
+# STEP 7: reboot
+# ***********************************************************************************************
+
+#reboot
+
+
+Note.
+it usually stops after step2
+do step 3 in pync env as root
+source /etc/profile.d/pynq_venv.sh
+run all commands one by one
+
+try the first command and expected output
+
+(pynq-venv) root@kria:~# xbutil examine
+System Configuration
+  OS Name              : Linux
+  Release              : 5.15.0-1027-xilinx-zynqmp
+  Version              : #31-Ubuntu SMP Wed Feb 21 04:33:09 UTC 2024
+  Machine              : aarch64
+  CPU Cores            : 4
+  Memory               : 3911 MB
+  Distribution         : Ubuntu 22.04.4 LTS
+  GLIBC                : 2.35
+  Model                : ZynqMP KR260 revB
+
+XRT
+  Version              : 2.15.0
+  Branch               : 2023.1
+  Hash                 : 64c933573e7e50a8aba939a74209590c2b739e8b
+  Hash Date            : 2023-04-17 09:18:13
+  ZOCL                 : 2.15.0, 64c933573e7e50a8aba939a74209590c2b739e8b
+
+Devices present
+BDF             :  Shell  Platform UUID  Device ID     Device Ready*  
+----------------------------------------------------------------------
+[0000:00:00.0]  :  KV260  0x0            user(inst=0)  Yes            
+
+
+* Devices that are not ready will have reduced functionality when using XRT tools
+
+
+
+// try second to make sure vai installation
+(pynq-venv) root@kria:~# vaitrace -v
+vaitrace ver:
+3.5.0_966e125_2023-06-21-11:18:16
+Project:
+vart
+Internal Git Ver:
+[671d17e, -]
+
+// try third one 
+(pynq-venv) root@kria:~# xbutil --version
+Version              : 2.15.0
+Branch               : 2023.1
+Hash                 : 64c933573e7e50a8aba939a74209590c2b739e8b
+Hash Date            : 2023-04-17 09:18:13
+ZOCL                 : 2.15.0, 64c933573e7e50a8aba939a74209590c2b739e8b
+
+//xdputil query
+this one wont be working, it gives an error.
+
+ubuntu@kria:~$ xdputil query
+WARNING: Logging before InitGoogleLogging() is written to STDERR
+I20250324 15:04:14.713367  2137 xrt_bin_stream.cpp:49] Please check your /etc/vart.conf
+Its format should be :
+    firmware: xx
+Example:
+    firmware: /run/media/mmcblk0p1/dpu.xclbin
+F20250324 15:04:14.713491  2137 xrt_bin_stream.cpp:53] [UNILOG][FATAL][VART_OPEN_DEVICE_FAIL][Cannot open device] open(/run/media/mmcblk0p1/dpu.xclbin) failed.
+/usr/bin/xdputil: line 20:  2137 Aborted                 (core dumped) python3 -m xdputil $*
+ubuntu@kria:~$ cat /etc/vart.conf
+firmware: /run/media/mmcblk0p1/dpu.xclbin
+ubuntu@kria:~$ ls /run/media/mmcblk0p1/dpu.xclbin
+ls: cannot access '/run/media/mmcblk0p1/dpu.xclbin': No such file or directory
+
+//find the dpu.xclbin 
+sudo find / -name "dpu.xclbin" 2>/dev/null
+
+//update here
+sudo nano /etc/vart.conf
+firmware: /usr/local/share/pynq-venv/lib/python3.10/site-packages/pynq_dpu/dpu.xclbin
+sudo chmod 644 /usr/local/share/pynq-venv/lib/python3.10/site-packages/pynq_dpu/dpu.xclbin
+
+// make sure the glog version
+(pynq-venv) root@kria:/home/ubuntu# dpkg -l | grep libgoogle-glog
+ii  libgoogle-glog-dev                         0.5.0+really0.4.0-2                     arm64        library that implements application-level logging.
+ii  libgoogle-glog0v5                          0.5.0+really0.4.0-2                     arm64        library that implements application-level logging.
+
+
+//final test
+(pynq-venv) root@kria:~# xdputil query
+WARNING: Logging before InitGoogleLogging() is written to STDERR
+F20250324 16:22:30.004788  6519 xrt_device_handle_imp.cpp:327] Check failed: r == 0 cannot set read range! cu_index 0 cu_base_addr 2147549184 fingerprint 0x101000056010407 : Invalid argument [22]
+Not support this dpu arch !
+{
+    "DPU IP Spec":{
+        "DPU Core Count":1,
+        "IP version":"v4.1.0",
+        "generation timestamp":"2023-02-21 21-30-00",
+        "git commit id":"7d32c41",
+        "git commit time":2023022121,
+        "regmap":"1to1 version"
+    },
+    "VAI Version":{
+        "libvart-runner.so":"Xilinx vart-runner Version: 3.5.0-966e125cfe19b51a6f938d6071f25dfd501fcd7e 6 2023-06-21-11:18:16 ",
+        "libvitis_ai_library-dpu_task.so":"libopencv_imgcodecs.so.406: cannot open shared object file: No such file or directory",
+        "libxir.so":"Xilinx xir Version: xir-d3a2977139dbea13f483fb091f602d1bb42f21a8 2023-06-21-11:16:56",
+        "target_factory":"target-factory.3.5.0 e618c965234bcd7aea337e5fb3d910cc6ba5faea"
+    },
+    "kernels":[
+        {
+            "AIE Frequency (MHz)":0,
+            "DPU Arch":"DPUCZDX8G_ISA1_B4096",
+            "DPU Frequency (MHz)":300,
+            "IP Type":"DPU",
+            "Load Parallel":2,
+            "Load augmentation":"enable",
+            "Load minus mean":"disable",
+            "Save Parallel":2,
+            "XRT Frequency (MHz)":300,
+            "cu_addr":"0x80010000",
+            "cu_handle":"0xaaab0d8c3dd0",
+            "cu_idx":0,
+            "cu_mask":1,
+            "cu_name":"DPUCZDX8G:DPUCZDX8G_1",
+            "device_id":0,
+            "fingerprint":"0x101000056010407",
+            "name":"DPU Core 0"
+        }
+    ]
+}
+
+
+//try this
+https://github.com/hurricanemad/pynq_dpu.git
+
+under RDN folder
+add this dpu_init.py
+
+#!/usr/bin/env python
+
+import os
+import time
+import numpy as np
+import cv2
+from matplotlib import pyplot as plt
+
+
+cnn_xmodel  = os.path.join("./RDN_pt", "RDN_pt.xmodel")
+hrimages_dir  = os.path.join("./"        , "medicalx2df", "train", "HR_x2")
+lrimages_dir  = os.path.join("./"        , "medicalx2df", "train", "LR_x2")
+
+def plt_imshow(title, image):
+    image=cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    plt.figure()
+    plt.imshow(image)
+    plt.title(title)
+    plt.grid(False)
+    plt.savefig(title)
+    plt.show()
+
+def predict_label(softmax):
+    with open(labels_file, "r") as f:
+        lines = f.readlines()
+    return lines[np.argmax(softmax)]
+
+def calculate_softmax(data):
+    result = np.exp(data)
+    return result
+
+def Normalize(image):
+    x_test  = np.asarray(image)
+    x_test = x_test.astype(np.float32)
+    x_test = x_test/255.0
+    out_x_test = x_test
+    return out_x_test
+
+
+def preprocess_fn(image_filename):
+
+    image=cv2.imread(image_filename)
+
+
+    image2 = Normalize(image) #added by me for ResNet18
+
+    return image2
+
+
+# Prepare the Overlay and load the "RDN_pt.xmodel"
+
+from pynq_dpu import DpuOverlay
+overlay = DpuOverlay("dpu.bit")
+overlay.load_model(cnn_xmodel)
+
+
+# Use VART APIs
+
+
+#load the filename of high and low resolution image
+hr_original_images = [i for i in os.listdir(hrimages_dir) if i.endswith("png")]
+lr_original_images = [i for i in os.listdir(lrimages_dir) if i.endswith("png")]
+#get the image number
+total_images = len(hr_original_images)
+print("Total image is:{:2d}".format(total_images))
+
+#acquire network structure
+dpu = overlay.runner
+inputTensors = dpu.get_input_tensors()
+outputTensors = dpu.get_output_tensors()
+shapeIn = tuple(inputTensors[0].dims)
+shapeOut = tuple(outputTensors[0].dims)
+outputSize = int(outputTensors[0].get_data_size() / shapeIn[0])
+print("shapeIn   : {}".format(shapeIn))
+print("shapeOut  : {}".format(shapeOut))
+print("outputSize: {}".format(outputSize))
+
+# allocate some buffers that will be re-used multiple times
+predictions = np.empty(total_images)
+test_labels = np.empty(total_images)
+softmax = np.empty(outputSize)
+output_data = [np.empty(shapeOut, dtype=np.float32, order="C")]
+input_data = [np.empty(shapeIn, dtype=np.float32, order="C")]
+image = input_data[0]
+
+
+# Run DPU to Make Predictions on ALL the images
+
+print("Classifying {} CIFAR10 pictures ...".format(total_images))
+time1 = time.time()
+for image_index in range(total_images):
+    #input image filenames
+    hrfilename = os.path.join(hrimages_dir, hr_original_images[image_index])
+    lrfilename = os.path.join(lrimages_dir, lr_original_images[image_index])
+
+    #preprocess the input images
+    preprocessed = preprocess_fn(lrfilename)
+
+    #convert input image to model input
+    image[0,...] = preprocessed.reshape(shapeIn[1:])
+
+    #run super-resolution model
+    job_id = dpu.execute_async(input_data, output_data)
+    dpu.wait(job_id)
+
+    #acquire model output
+    temp = [j.reshape(1, outputSize) for j in output_data]
+    
+    #convert the model output to result image
+    result = temp[0][0].reshape(shapeOut[1:])
+    result = (result)*255.0
+    result = np.clip(result, 0.0, 255.0)
+    
+    print(result.shape)
+    print("Image width is:{:d}, Image height is:{:d}".format(result.shape[1], result.shape[0]))
+    print("Center Gray is:{:f}".format(result[512, 640, 0]))
+    resultOut = result.astype(np.uint8)
+
+    #save the output image
+    
+    strSaveName =hr_original_images[image_index].split('.', -1)[-2] + "result.bmp"
+    cv2.imwrite(strSaveName, resultOut)
+    print("Saveimage name is:{:s}".format(hr_original_images[image_index].split('.', -1)[-2]))
+    
+
+time2 = time.time()
+execution_time = time2-time1
+print("  Execution time: {:.4f}s".format(execution_time))
+print("      Throughput: {:.4f}FPS".format(total_images/execution_time))
+
+
+# Clean up
+del overlay
+del dpu
+
+
+
+//first time you will get an error
+
+following warning can be ignored 
+(pynq-venv) root@kria:~/jupyter_notebooks/pynq_dpu/RDN# python3 dpu_init.py 
+WARNING: Logging before InitGoogleLogging() is written to STDERR
+F20250324 16:00:38.121268  5307 xrt_device_handle_imp.cpp:327] Check failed: r == 0 cannot set read range! cu_index 0 cu_base_addr 2147549184 fingerprint 0x101000056010407 : Invalid argument 
+[22]
+
+
+
+
+// install these 
+sudo apt install cmake
+
+we need glog 0.5.0 version
+there is the glog folder from github
+
+mkdir build && cd build
+cmake -DBUILD_SHARED_LIBS=ON -DCMAKE_INSTALL_PREFIX=/usr/local ..
+make -j$(nproc)
+sudo make install
+sudo ldconfig
+
+after this i could built the superpoint exe
+
+
+
+github token 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
+
+
+git remote set-url origin https://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@github.com/CroosJJSE/git_board.git
+tested

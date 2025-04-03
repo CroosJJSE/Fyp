@@ -1,0 +1,2 @@
+/usr/bin/ar qc libsuperpoint_lib.a CMakeFiles/superpoint_lib.dir/src/superpoint.cpp.o
+/usr/bin/ranlib libsuperpoint_lib.a
